@@ -158,7 +158,7 @@ class graphSetup{
         
         //Ask user for config
         do {
-            System.out.printf("Enter config: "); 
+            System.out.printf("Enter wire configuration (+ or x): "); 
             lightConfig = scan.next();
             if (lightConfig.equals("+")){
                 //Set config to + (See Below)
@@ -174,7 +174,7 @@ class graphSetup{
         //Print intial settings
         System.out.printf("\nIntial Settings:");
         System.out.printf("\nNum of Rows: %d\nNum of Nodes: %d",numOfRows,numOfNodes);
-        System.out.printf("\nLight config (+ or x): %s\n", lightConfig);
+        System.out.printf("\nWire configuration: %s\n", lightConfig);
     }
     
     ////////////////////////////////////////////////////////////////////////////    
@@ -315,7 +315,6 @@ class graphSetup{
         for (int i = 0; i < numOfRows; i++){
             System.out.printf(" col %2d |", i);
         }
-        System.out.printf("\n");
         
         //Print the row number of the data
         for (int i = 0; i < numOfNodes; i++){
