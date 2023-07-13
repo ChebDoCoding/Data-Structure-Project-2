@@ -112,7 +112,7 @@ class graphSetup{
                 }  
             } while (inputSuccess == false);
         }
-        intialState = intialString.toCharArray();        
+        intialState = intialString.toCharArray(); 
         
         //Create the HashMap
         AllLightNodes = new HashMap<String, Light>();
@@ -126,7 +126,7 @@ class graphSetup{
             String tempNumber = "" + intialState[i];
             
             //If the intial state of light is 0 or false, then set as false
-            if (tempNumber.compareTo("0") == 1){
+            if (tempNumber.compareTo("0") == 0){
                 AllLightNodes.put(Integer.toString(i), 
                         new Light(Integer.toString(i), false));
                 
@@ -190,8 +190,10 @@ class graphSetup{
             }
             
             //Make an edge from current node to RIGHT node if exist
-            if (i + 1 % numOfRows != 0 && i + 1 != numOfNodes){
-                mainGraph.addEdge(Integer.toString(i), Integer.toString(i+1));
+            if ((i + 1) % numOfRows != 0){
+                if ((i + 1) != numOfNodes){
+                    mainGraph.addEdge(Integer.toString(i), Integer.toString(i+1));
+                }
             }
             
             //Make an edge from current node to TOP node if exist
@@ -213,33 +215,38 @@ class graphSetup{
         
         //Main loop to set edges
         for (int i = 0; i < numOfNodes; i++){
+            System.out.printf("%d ", i);
             //Check if TOP nodes exist
             if (i - numOfRows > -1){
                 tempNumber = i - numOfRows;
                 
-                //Check if TOP LEFT node exist
+                //Check if on LEFT MOST NODE
                 if (tempNumber % numOfRows != 0){
                     mainGraph.addEdge(Integer.toString(i), Integer.toString(tempNumber - 1));
                 }
                 
-                //Check if TOP RIGHT node exist
-                if (tempNumber + 1 % numOfRows != 0 && tempNumber + 1 != numOfNodes){
-                    mainGraph.addEdge(Integer.toString(i), Integer.toString(tempNumber + 1));
-                }                   
+                //Check if on RIGHT MOST Node
+                if ((i + 1) % numOfRows != 0){
+                    if ((tempNumber + 1) != numOfNodes){
+                        mainGraph.addEdge(Integer.toString(i), Integer.toString(tempNumber + 1));
+                    }
+                }     
             }
             
             //Check if BOTTOM nodes exist
             if (i + numOfRows < numOfNodes){
                 tempNumber = i + numOfRows;
                 
-                //Check if BOTTOM LEFT node exist
-                if (tempNumber != 0){
+                //Check if on LEFT MOST Node
+                if (tempNumber % numOfRows != 0){
                     mainGraph.addEdge(Integer.toString(i), Integer.toString(tempNumber - 1));
                 }
                 
-                //Check if BOTTOM RIGHT node exist
-                if (tempNumber + 1 % numOfRows != 0 && tempNumber + 1 != numOfNodes){
-                    mainGraph.addEdge(Integer.toString(i), Integer.toString(tempNumber + 1));
+                //Check if on RIGHT MOST Node
+                if ((i + 1) % numOfRows != 0){
+                    if ((tempNumber + 1) != numOfNodes){
+                        mainGraph.addEdge(Integer.toString(i), Integer.toString(tempNumber + 1));
+                    }
                 }                    
             }          
         }        
@@ -365,8 +372,15 @@ public class Project2 {
         myGraph.printGraph();
         
         //TESTING
-        //myGraph.toggleLightNode(0);
-        //myGraph.printGraph();
+        do{
+        Scanner scan = new Scanner(System.in);
+        System.out.printf("\n\nEnter node to toggle: ");
+        String num = scan.next();
+        int hi = Integer.parseInt(num);
+        
+        myGraph.toggleLightNode(hi);
+        myGraph.printGraph();
         //System.out.printf("\n%b",myGraph.isCompleted());
+        } while (true);
     }    
 }
