@@ -9,15 +9,13 @@
 package Project2;
 
 //Basic Imports
-import java.io.*;
 import java.util.*;
 
 //Jgraph Imports
 import org.jgrapht.*;
 import org.jgrapht.graph.*;
-import org.jgrapht.alg.connectivity.*;
-import org.jgrapht.alg.color.*;
-import org.jgrapht.alg.spanning.*;
+import org.jgrapht.alg.interfaces.ShortestPathAlgorithm;
+import org.jgrapht.alg.shortestpath.*;
 
 /*
 How this program should work:
@@ -27,7 +25,6 @@ How this program should work:
  - 3-1: We first get the names of all the boards connected to our current board
  - 3-2: We then take this name list and connect current board to the boards 
         with matching names with weight of 1
-
 
 */
 
@@ -61,6 +58,7 @@ class Board{
                 break;
             case 4:
                 i = 9;
+                break;
             case 5:
                 i = 0;
                 break;
@@ -95,11 +93,14 @@ class Board{
     //Toggle a certain light
     public boolean[][] toggle(int x, int y, boolean[][] currentBoard){
         //Set new Board
-        boolean[][] newBoard = currentBoard;
+        boolean[][] newBoard = new boolean[sizeOfRow][sizeOfRow];
+        for (int i = 0; i < sizeOfRow; i++) {
+            System.arraycopy(currentBoard[i], 0, newBoard[i], 0, sizeOfRow);
+        }
         
         //If node is outside range of graph then just return the board
         if (x < 0 || y < 0 || x >= currentBoard.length || y >= currentBoard[x].length) {
-            return newBoard;
+            return currentBoard;
         }
         
         //If not outside range then toggle and then return
@@ -145,14 +146,18 @@ class Board{
     //Return string name of connecting board in plus (+) config
     public ArrayList<String> getConnectingBoardNamesPlus(){
         //Create the list to return an create dummy board
-        ArrayList<String> list = new ArrayList<String>();        
-        boolean[][] dummy;
+        ArrayList<String> list = new ArrayList<String>();  
         
         //Get all boards connected to current board
         for (int x = 0; x < sizeOfRow; x++) {
             for (int y = 0; y < sizeOfRow; y++) {
+                boolean[][] dummy = new boolean[sizeOfRow][sizeOfRow];
+                for (int i = 0; i < sizeOfRow; i++) {
+                    System.arraycopy(status[i], 0, dummy[i], 0, sizeOfRow);
+                }
+                
                 //Current node
-                dummy = toggle(x,y,status);
+                dummy = toggle(x,y,dummy);
                 
                 //Connecting Nodes
                 //Below and Above
@@ -175,14 +180,18 @@ class Board{
     //Return string name of connecting board in cross (x) config
     public ArrayList<String> getConnectingBoardNamesCross(){
         //Create the list to return an create dummy board
-        ArrayList<String> list = new ArrayList<String>();        
-        boolean[][] dummy;
+        ArrayList<String> list = new ArrayList<String>();  
         
         //Get all boards connected to current board
         for (int x = 0; x < sizeOfRow; x++) {
             for (int y = 0; y < sizeOfRow; y++) {
+                boolean[][] dummy = new boolean[sizeOfRow][sizeOfRow];
+                for (int i = 0; i < sizeOfRow; i++) {
+                    System.arraycopy(status[i], 0, dummy[i], 0, sizeOfRow);
+                }
+                
                 //Current node
-                dummy = toggle(x,y,status);
+                dummy = toggle(x,y,dummy);
                 
                 //Connecting Nodes
                 //Top right and Top left
@@ -331,6 +340,7 @@ class graphSetup{
         }
         
         //Ask user for config
+        inputSuccess = false;
         do {
             System.out.printf("Enter wire configuration (+ or x): "); 
             lightConfig = scan.next();
@@ -348,7 +358,7 @@ class graphSetup{
                     //Second Loop: Add an edge between current board 
                     //and all the other boards if not already exist
                     for (String otherNodes : connectingNames){
-                        if (mainGraph.containsEdge(currentNodeName, otherNodes)){
+                        if (!mainGraph.containsEdge(currentNodeName, otherNodes)){
                             Graphs.addEdgeWithVertices(mainGraph, 
                                 currentNodeName, otherNodes, 1);
                         }
@@ -371,7 +381,7 @@ class graphSetup{
                     //Second Loop: Add an edge between current board 
                     //and all the other boards if not already exist
                     for (String otherNodes : connectingNames){
-                        if (mainGraph.containsEdge(currentNodeName, otherNodes)){
+                        if (!mainGraph.containsEdge(currentNodeName, otherNodes)){
                             Graphs.addEdgeWithVertices(mainGraph, 
                                 currentNodeName, otherNodes, 1);
                         }
@@ -391,6 +401,11 @@ class graphSetup{
         //Formating and printing board
         String formatedIntialString = properFormating(intialString);
         printBoard(formatedIntialString);
+        
+        System.out.printf("\n\n");
+        //Set<DefaultWeightedEdge> allEdges = mainGraph.edgeSet();
+	//printDefaultWeightedEdges(allEdges, false);
+        
     }
     
     ////////////////////////////////////////////////////////////////////////////
@@ -411,6 +426,15 @@ class graphSetup{
         //Return List
         return list;
     }
+    
+        public void printDefaultWeightedEdges(Collection<DefaultWeightedEdge> E, boolean f)
+    {
+	for (DefaultWeightedEdge e : E)
+        {
+            //System.out.println(e.toString());
+	          
+            
+        }}
          
     ////////////////////////////////////////////////////////////////////////////
     //Board object related methods
@@ -421,9 +445,37 @@ class graphSetup{
 	return AllBoardNodes.get(name);
     }
     
+    //Print board
     public void printBoard(String name){
         Board temp = searchBoard(name);
         temp.print();
+    }
+    
+    //Solving the board
+    public void solve(){
+        //Set the final board
+        String finalBoard = "0";
+        try
+            {
+            ShortestPathAlgorithm<String, DefaultWeightedEdge> shpath = 
+                    new DijkstraShortestPath<>(mainGraph);
+            
+            // getPath throws exception if negative edge exists
+            GraphPath<String, DefaultWeightedEdge> gpath = 
+                    shpath.getPath(properFormating(intialString), finalBoard);
+            if (gpath != null){     
+                System.out.printf("DONE");
+                //printGraphPath(gpath);
+            } else{
+                System.out.printf("\nThere is no solution");
+            }
+        }
+        catch(Exception e)
+        {
+            System.out.println(e);
+            System.out.println("Use Bellman-Ford instead");
+        }
+	
     }
     
     ////////////////////////////////////////////////////////////////////////////
@@ -454,7 +506,6 @@ public class Project2V3 {
         System.out.printf("Welcome to the Boards Out puzzle solver\n");
         System.out.printf("Please enter the correct information below\n\n");
         graphSetup myGraph = new graphSetup();
-        
-        myGraph.printBoard("15");
+        myGraph.solve();
     }    
 }
