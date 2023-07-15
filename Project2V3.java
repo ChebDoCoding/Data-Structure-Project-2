@@ -87,7 +87,8 @@ class Board{
     //Important functions
     
     //Get commands
-    public boolean[][] getStatus() {return status;}
+    public boolean getStatus(int x, int y) {return status[x][y];}
+    public boolean[][] getAllStatus() {return status;}
     public String getName() {return name;}
        
     //Toggle a certain light
@@ -138,6 +139,70 @@ class Board{
         
         //Returning the name
         return temp2;        
+    }
+    
+    //Used to check which light was toggled between moves
+    public String checkLightX(boolean[][] list, String config){
+        //How we are transfering the information
+        String xThenY = "0000";
+        
+        //Plus config
+        if (config.equals("+")){
+            for (int x = 0; x < sizeOfRow; x++) {
+                for (int y = 0; y < sizeOfRow; y++) {
+                    boolean[][] dummy = new boolean[sizeOfRow][sizeOfRow];
+                    for (int i = 0; i < sizeOfRow; i++) {
+                        System.arraycopy(list[i], 0, dummy[i], 0, sizeOfRow);
+                    }
+                    //Current node
+                    dummy = toggle(x,y,dummy);
+
+                    //Connecting Nodes
+                    //Below and Above
+                    dummy = toggle(x, y - 1,dummy);
+                    dummy = toggle(x, y + 1,dummy);
+
+                    //Left and Right
+                    dummy = toggle(x - 1, y,dummy);
+                    dummy = toggle(x + 1, y,dummy);
+
+                    //Check if the two arrays are equal
+                    if (Arrays.equals(status,dummy)){
+                        xThenY = String.format("%d%d", x,y);
+                    }
+                }
+            }
+        } 
+        //Cross config
+        else{
+            for (int x = 0; x < sizeOfRow; x++) {
+                for (int y = 0; y < sizeOfRow; y++) {
+                    boolean[][] dummy = new boolean[sizeOfRow][sizeOfRow];
+                    for (int i = 0; i < sizeOfRow; i++) {
+                        System.arraycopy(list[i], 0, dummy[i], 0, sizeOfRow);
+                    }
+
+                    //Current node
+                    dummy = toggle(x,y,dummy);
+
+                    //Connecting Nodes
+                    //Top right and Top left
+                    dummy = toggle(x + 1, y + 1,dummy);
+                    dummy = toggle(x - 1, y + 1,dummy);
+
+                    //Bottom right and Bottom left
+                    dummy = toggle(x + 1, y - 1,dummy);
+                    dummy = toggle(x - 1, y - 1,dummy);
+
+                    //Check if the two arrays are equal
+                    if (Arrays.equals(status,dummy)){
+                        xThenY = String.format("%d%d", x,y);
+                    }
+                }
+            }
+        }
+        //Return
+        return xThenY;
     }
     
     //////////////////////////////////////////////////////////////////////////// 
@@ -216,9 +281,18 @@ class Board{
     
     public void print(){
         //States in Bits
-        String temp = String.format("%025d", Integer.parseInt(Integer.toBinaryString(Integer.parseInt(name))));
-        System.out.printf("\nCurrent state in bits: %s\n",
-                temp.substring(25 - (sizeOfRow * sizeOfRow)));
+        System.out.printf("\nCurrent state in bits: ");
+        for (int i = 0; i < sizeOfRow; i++){
+            for (int j = 0; j < sizeOfRow; j++){
+                if (status[i][j]){
+                    System.out.printf("1");
+                } else{
+                    System.out.printf("0");
+                }
+            } 
+            System.out.printf(" ");
+        }
+        System.out.printf("\n");
         
         //Print the columns bar
         System.out.printf("       |");
@@ -239,22 +313,6 @@ class Board{
                     System.out.printf("   ▯▯   |");
                 } else{
                     System.out.printf("   ▮▮   |");
-                }
-            }
-        }
-        
-        for (int x = 0; x < sizeOfRow; x++){
-            //New line and print row number
-            System.out.printf("\n");
-            System.out.printf("row %2d |", x);
-            
-            //For each entry, check if true or false and then print that
-            for (int y = 0; y < sizeOfRow; y++){
-                //Print data
-                if (status[x][y]){
-                    System.out.printf("  true |");
-                } else{
-                    System.out.printf("  false|");
                 }
             }
         }
@@ -401,11 +459,7 @@ class graphSetup{
         //Formating and printing board
         String formatedIntialString = properFormating(intialString);
         printBoard(formatedIntialString);
-        
-        System.out.printf("\n\n");
-        //Set<DefaultWeightedEdge> allEdges = mainGraph.edgeSet();
-	//printDefaultWeightedEdges(allEdges, false);
-        
+                
     }
     
     ////////////////////////////////////////////////////////////////////////////
@@ -426,15 +480,6 @@ class graphSetup{
         //Return List
         return list;
     }
-    
-        public void printDefaultWeightedEdges(Collection<DefaultWeightedEdge> E, boolean f)
-    {
-	for (DefaultWeightedEdge e : E)
-        {
-            //System.out.println(e.toString());
-	          
-            
-        }}
          
     ////////////////////////////////////////////////////////////////////////////
     //Board object related methods
@@ -464,8 +509,7 @@ class graphSetup{
             GraphPath<String, DefaultWeightedEdge> gpath = 
                     shpath.getPath(properFormating(intialString), finalBoard);
             if (gpath != null){     
-                System.out.printf("DONE");
-                //printGraphPath(gpath);
+                printGraphPath(gpath);
             } else{
                 System.out.printf("\nThere is no solution");
             }
@@ -473,9 +517,48 @@ class graphSetup{
         catch(Exception e)
         {
             System.out.println(e);
-            System.out.println("Use Bellman-Ford instead");
+            System.out.println("ERROR");
+        }	
+    }
+
+    //Copied from Examples
+    public void printGraphPath(GraphPath<String, DefaultWeightedEdge> gpath){
+        //Print total moves
+        System.out.printf("\n\n%d moves to turn off all lights\n", gpath.getLength());
+        
+        //Get all nodes in shortest path
+        List<String> allNodes = gpath.getVertexList(); 
+
+        //Loop
+        for (int i = 1; i < allNodes.size(); i++){
+            //Get previous board and current board
+            Board previousBoard = searchBoard(allNodes.get(i-1));
+            Board currentBoard = searchBoard(allNodes.get(i));
+            
+            //Get node that changed
+            String node = currentBoard.checkLightX(previousBoard.getAllStatus(),
+                    lightConfig);
+            String temp = String.valueOf(node.charAt(0)) + String.valueOf(node.charAt(1));
+            int x = Integer.parseInt(temp);
+            temp = String.valueOf(node.charAt(2)) + String.valueOf(node.charAt(3));
+            int y = Integer.parseInt(temp);
+            
+            //Get previous node's status
+            boolean from = previousBoard.getStatus(x, y);
+            
+            //Print current move
+            System.out.printf("\n\n\n>>> Move %2d: ", i);
+            
+            //Print out the different status change
+            if (from){
+                System.out.printf("turn off row %2d, col %2d", x, y);
+            } else{
+                System.out.printf("turn on row %2d, col %2d", x, y);
+            }
+            
+            //Print Board
+            printBoard(allNodes.get(i));
         }
-	
     }
     
     ////////////////////////////////////////////////////////////////////////////
