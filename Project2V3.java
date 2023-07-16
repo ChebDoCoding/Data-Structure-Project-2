@@ -25,7 +25,8 @@ How this program should work:
  - 3-1: We first get the names of all the boards connected to our current board
  - 3-2: We then take this name list and connect current board to the boards 
         with matching names with weight of 1
-
+4. Re run Dji algorithm to find shortest path
+5. Ask user if they want to rerun the program
 */
 
 
@@ -65,7 +66,8 @@ class Board{
         }
         
         //Formating into binary
-        String temp = String.format("%025d", Integer.parseInt(Integer.toBinaryString(Integer.parseInt(name))));
+        String temp = String.format("%025d", 
+                Long.parseLong(Integer.toBinaryString(Integer.parseInt(name))));
         
         //Set the board
         for (int x = 0; x < sizeOfRow; x++) {
@@ -142,9 +144,11 @@ class Board{
     }
     
     //Used to check which light was toggled between moves
-    public String checkLightX(boolean[][] list, String config){
+    public int[] checkLight(boolean[][] list, String config){
         //How we are transfering the information
-        String xThenY = "0000";
+        int[] toReturn = new int[2];
+        toReturn[0] = 0;
+        toReturn[1] = 0;
         
         //Plus config
         if (config.equals("+")){
@@ -167,8 +171,9 @@ class Board{
                     dummy = toggle(x + 1, y,dummy);
 
                     //Check if the two arrays are equal
-                    if (Arrays.equals(status,dummy)){
-                        xThenY = String.format("%d%d", x,y);
+                    if (Arrays.deepEquals(status, dummy)){
+                        toReturn[0] = x;
+                        toReturn[1] = y;
                     }
                 }
             }
@@ -195,14 +200,15 @@ class Board{
                     dummy = toggle(x - 1, y - 1,dummy);
 
                     //Check if the two arrays are equal
-                    if (Arrays.equals(status,dummy)){
-                        xThenY = String.format("%d%d", x,y);
+                    if (Arrays.deepEquals(status, dummy)){
+                        toReturn[0] = x;
+                        toReturn[1] = y;
                     }
                 }
             }
         }
         //Return
-        return xThenY;
+        return toReturn;
     }
     
     //////////////////////////////////////////////////////////////////////////// 
@@ -341,19 +347,22 @@ class graphSetup{
     public graphSetup(){
         //Get number of rows
         Scanner scan = new Scanner(System.in);
+        System.out.printf( "=-".repeat(20) + "="); 
         do {
-            System.out.printf("Enter number of rows (>1 & <5): "); 
+            System.out.printf("\nEnter number of rows (>1 & <5): "); 
             String temp = scan.next();
             numOfRows = Integer.parseInt(temp);
             if (numOfRows > 1) {inputSuccess = true;}  
         } while (inputSuccess == false);
         numOfLights = numOfRows * numOfRows;
         currentBoardStatus = new boolean[numOfLights];
+        System.out.printf( "=-".repeat(20) + "="); 
                 
         //Ask user for which lights are already on        
         String temp;
         int stringLength;
         inputSuccess = false;
+        System.out.printf( "\n");
         System.out.printf("Enter intial state of each row\n"); 
         for (int i = 0; i < numOfRows; i++){
             inputSuccess = false;
@@ -379,6 +388,7 @@ class graphSetup{
                 }  
             } while (inputSuccess == false);
         }
+        System.out.printf( "=-".repeat(20) + "="); 
         
         //Create the HashMap
         AllBoardNodes = new HashMap<String, Board>();
@@ -399,6 +409,7 @@ class graphSetup{
         
         //Ask user for config
         inputSuccess = false;
+        System.out.printf( "\n");
         do {
             System.out.printf("Enter wire configuration (+ or x): "); 
             lightConfig = scan.next();
@@ -422,6 +433,8 @@ class graphSetup{
                         }
                     }                    
                 }
+                //To make look nice
+                System.out.printf( "=-".repeat(20) + "="); 
                 
                 //To get out of do while loop
                 break;
@@ -445,6 +458,8 @@ class graphSetup{
                         }
                     }                    
                 }
+                //To make look nice
+                System.out.printf( "=-".repeat(20) + "="); 
                 
                 //To get out of do while loop
                 break;
@@ -511,7 +526,9 @@ class graphSetup{
             if (gpath != null){     
                 printGraphPath(gpath);
             } else{
-                System.out.printf("\nThere is no solution");
+                System.out.printf("\n\n");
+                System.out.printf( "=-".repeat(20) + "=");  
+                System.out.printf("\nThere is no solution\n");
             }
         }
         catch(Exception e)
@@ -524,7 +541,10 @@ class graphSetup{
     //Copied from Examples
     public void printGraphPath(GraphPath<String, DefaultWeightedEdge> gpath){
         //Print total moves
-        System.out.printf("\n\n%d moves to turn off all lights\n", gpath.getLength());
+        System.out.printf("\n\n");
+        System.out.printf( "=-".repeat(20) + "=");   
+        System.out.printf("\n%d moves to turn off all lights\n", gpath.getLength());
+        System.out.printf( "=-".repeat(20) + "=");   
         
         //Get all nodes in shortest path
         List<String> allNodes = gpath.getVertexList(); 
@@ -536,18 +556,16 @@ class graphSetup{
             Board currentBoard = searchBoard(allNodes.get(i));
             
             //Get node that changed
-            String node = currentBoard.checkLightX(previousBoard.getAllStatus(),
+            int[] data = currentBoard.checkLight(previousBoard.getAllStatus(),
                     lightConfig);
-            String temp = String.valueOf(node.charAt(0)) + String.valueOf(node.charAt(1));
-            int x = Integer.parseInt(temp);
-            temp = String.valueOf(node.charAt(2)) + String.valueOf(node.charAt(3));
-            int y = Integer.parseInt(temp);
+            int x = data[0];
+            int y = data[1];
             
             //Get previous node's status
             boolean from = previousBoard.getStatus(x, y);
             
             //Print current move
-            System.out.printf("\n\n\n>>> Move %2d: ", i);
+            System.out.printf("\n\n>>> Move %2d: ", i);
             
             //Print out the different status change
             if (from){
@@ -559,6 +577,10 @@ class graphSetup{
             //Print Board
             printBoard(allNodes.get(i));
         }
+        
+        //Extra Formating
+        System.out.printf("\n\n");
+        System.out.printf( "=-".repeat(20) + "="); 
     }
     
     ////////////////////////////////////////////////////////////////////////////
@@ -585,10 +607,43 @@ class graphSetup{
 
 public class Project2V3 {
     public static void main(String[] args) {
-        //Run the Startup
-        System.out.printf("Welcome to the Boards Out puzzle solver\n");
-        System.out.printf("Please enter the correct information below\n\n");
-        graphSetup myGraph = new graphSetup();
-        myGraph.solve();
+        //Loop
+        boolean running = true;
+        boolean checkLetter;
+        do{
+            //Run the Startup
+            checkLetter = true;
+            System.out.printf("\n");
+            System.out.printf( "=-".repeat(20) + "="); 
+            System.out.printf("\nWelcome to the Boards Out puzzle solver\n");
+            System.out.printf("Please enter the correct information below\n");
+            graphSetup myGraph = new graphSetup();
+            myGraph.solve();
+
+            //Ask for new game
+            Scanner scan = new Scanner(System.in);
+            String temp;
+            
+            //Ask for new game loop
+            System.out.printf("\n");
+            do{
+                System.out.printf("New game (Y/N)? : ");
+                temp = scan.nextLine().toLowerCase();
+                if (temp.equals("n")){
+                    running = false;
+                    checkLetter = false;
+                    
+                } else if (temp.equals("y")){
+                    checkLetter = false;
+                }
+            } while (checkLetter);
+            System.out.printf( "=-".repeat(20) + "="); 
+            System.out.printf("\n\n\n");
+        } while (running);
+        
+        //Thank you note when done
+        System.out.printf( "=-".repeat(20) + "="); 
+        System.out.printf("\nThank you for using our program!\n");
+        System.out.printf( "=-".repeat(20) + "="); 
     }    
 }
